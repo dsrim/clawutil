@@ -339,22 +339,45 @@ class ClawData(object):
         attribute will be added.
         """
 
-        data_file = open(os.path.abspath(path),'r')
 
-        for lineno,line in enumerate(data_file):
-            if "=:" not in line:
-                continue
+        varname_list = []
+        vvtuple_list = []
 
-            value, tail = line.split("=:")
-            varname = tail.split()[0]
+        # process data_file
+        with open(os.path.abspath(path), mode='r') as data_file:
+            for lineno,line in enumerate(data_file):
+                if "=:" not in line:
+                    continue
 
-            # Set this parameter
-            if self.has_attribute(varname) or force:
+                value, tail = line.split("=:")
+                varname = tail.split()[0]
                 value = self._parse_value(value)
-                if not self.has_attribute(varname):
-                    self.add_attribute(varname,value)
+
+                varname_list.append(varname)
+                vvtuple_list.append((varname,value))
+
+
+        for varname,value in vvtuple_list:
+
+            # Set parameter
+            if self.has_attribute(varname) or force:
+
+                if (varname_list.count(varname) > 1):
+                    # if varnames appear more than once, make list & append
+                    if not self.has_attribute(varname):
+                        self.add_attribute(varname,[])
+                        getattr(self,varname).append(value)
+                    else:
+                        if isinstance(getattr(self,varname),type(None)):
+                            setattr(self,varname,[])
+                        getattr(self,varname).append(value)
+
                 else:
-                    setattr(self,varname,value)
+                    # otherwise, just set parameter
+                    if not self.has_attribute(varname):
+                        self.add_attribute(varname,value)
+                    else:
+                        setattr(self,varname,value)
     
 
     def _parse_value(self,value):
